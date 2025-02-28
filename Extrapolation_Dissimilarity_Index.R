@@ -10,17 +10,19 @@ PredImp <- read_xlsx("predictor_importance.xlsx")
 TrainData <- readRDS("actual_sites.rds")
 NewData <- readRDS("theoretical_sites.rds")
 
-# need to ask why NAs
+# Remove NA - predictions were not made at these locations
 TrainData <- TrainData[complete.cases(TrainData),]
 NewData <- NewData[complete.cases(NewData),]
 
 PredImpFilter <- PredImp[PredImp$class == "fungicides" & PredImp$type == "conc",]
 
-# predictors in importance are not included in the training data?
+# predictors that were the same for training data and new data 
+# in importance are not considerd.
 # PredImpFilter$pred[!PredImpFilter$pred%in%colnames(TrainData)]
+
 preds <- intersect(PredImpFilter$pred, colnames(TrainData))
 PredImpFilter <- PredImpFilter[PredImpFilter$pred %in% preds,]
-PredImpFilter <- setNames(PredImpFilter$V1,PredImpFilter$pred)
+PredImpFilter <- setNames(PredImpFilter$V1, PredImpFilter$pred)
 Importance <- PredImpFilter
 
 # function to scale and weight predictor variables
@@ -87,9 +89,9 @@ Test4Extrapolation <- function(TrainDataWeightedList, NewDataPt, Importance){
   })
   
   # calculate the dissimilarity index 
-  DI <- min(d2)/MeanDist
+  DI <- data.frame(MinDist=min(d2), DI = min(d2)/MeanDist)
   
-  return(min(DI))
+  return(DI)
 }
 
 # scale and weight training data
@@ -100,7 +102,7 @@ TrainList <- Scale_Weight(TrainData, Importance)
 cl <- makeCluster(detectCores())
 clusterExport(cl, c("TrainList", "Importance", "Test4Extrapolation"))
 t1 <- Sys.time()
-Results <- parApply(cl, NewData[1:1000, names(Importance)], 1, function(x){
+Results <- parApply(cl, NewData[1:1000000, names(Importance)], 1, function(x){
   Test4Extrapolation(TrainDataWeightedList = TrainList, 
                      NewDataPt = x, 
                      Importance = Importance)
