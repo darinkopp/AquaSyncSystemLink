@@ -1,10 +1,11 @@
 # Checking for extrapolation
 
-setwd("Extrapolation")
-
 library(readxl)
 library(parallel)
 library(Rfast)
+
+# Data files downloaded from https://seafile.rlp.net/d/789f89a8d7a7402eb73a/
+setwd("Extrapolation")
 
 PredImp <- read_xlsx("predictor_importance.xlsx")
 TrainData <- readRDS("actual_sites.rds")
@@ -12,12 +13,15 @@ NewData <- readRDS("theoretical_sites.rds")
 
 # Remove NA - predictions were not made at these locations
 TrainData <- TrainData[complete.cases(TrainData),]
-NewData <- NewData[complete.cases(NewData),]
 
-PredImpFilter <- PredImp[PredImp$class == "fungicides" & PredImp$type == "conc",]
+#NewData <- NewData[complete.cases(NewData),]
+
+# herbicides; insecticides
+
+PredImpFilter <- PredImp[PredImp$class == "metals" & PredImp$type == "conc",]
 
 # predictors that were the same for training data and new data 
-# in importance are not considerd.
+# in importance are not considered.
 # PredImpFilter$pred[!PredImpFilter$pred%in%colnames(TrainData)]
 
 preds <- intersect(PredImpFilter$pred, colnames(TrainData))
@@ -102,7 +106,7 @@ TrainList <- Scale_Weight(TrainData, Importance)
 cl <- makeCluster(detectCores())
 clusterExport(cl, c("TrainList", "Importance", "Test4Extrapolation"))
 t1 <- Sys.time()
-Results <- parApply(cl, NewData[1:1000000, names(Importance)], 1, function(x){
+Results <- parApply(cl, NewData[, names(Importance)], 1, function(x){
   Test4Extrapolation(TrainDataWeightedList = TrainList, 
                      NewDataPt = x, 
                      Importance = Importance)
@@ -110,4 +114,24 @@ Results <- parApply(cl, NewData[1:1000000, names(Importance)], 1, function(x){
 t2 <- Sys.time()
 stopCluster(cl)
 t2-t1
+
+#saveRDS(Results,"Results_1mil.rds")
+#saveRDS(Results,"Results_7mil.rds")
+
+saveRDS(Results, "Results_Metals_Conc.rds")
+
+DIndex <- do.call(rbind, Results)
+
+# rows are organized the same as input New Data File
+# PredImp[PredImp$class == "metals" & PredImp$type == "conc",]
+#write.csv(DIndex, "DissimilarityIndex_metals_conc.csv")
+
+#file complete 3/7/2025
+#PredImp[PredImp$class == "fungicides" & PredImp$type == "conc",]
+#write.csv(DIndex, "DissimilarityIndex_fungicides_conc.csv")
+
+rm(a)
+rm(b)
+rm(DIndex)
+gc()
 
