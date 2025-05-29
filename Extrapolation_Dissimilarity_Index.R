@@ -16,9 +16,9 @@ TrainData <- TrainData[complete.cases(TrainData),]
 
 #NewData <- NewData[complete.cases(NewData),]
 
-# herbicides; insecticides
+#insecticides
 
-PredImpFilter <- PredImp[PredImp$class == "metals" & PredImp$type == "conc",]
+PredImpFilter <- PredImp[PredImp$class == "insecticides" & PredImp$type == "conc",]
 
 # predictors that were the same for training data and new data 
 # in importance are not considered.
@@ -118,9 +118,16 @@ t2-t1
 #saveRDS(Results,"Results_1mil.rds")
 #saveRDS(Results,"Results_7mil.rds")
 
-saveRDS(Results, "Results_Metals_Conc.rds")
+saveRDS(Results, "Results_insecticides_Conc.rds")
 
 DIndex <- do.call(rbind, Results)
+# rows are organized the same as input New Data File
+# PredImp[PredImp$class == "insecticides" & PredImp$type == "conc",]
+#write.csv(DIndex, "DissimilarityIndex_insecticides_conc.csv")
+
+# rows are organized the same as input New Data File
+# PredImp[PredImp$class == "herbicides" & PredImp$type == "conc",]
+#write.csv(DIndex, "DissimilarityIndex_herbicides_conc.csv")
 
 # rows are organized the same as input New Data File
 # PredImp[PredImp$class == "metals" & PredImp$type == "conc",]
